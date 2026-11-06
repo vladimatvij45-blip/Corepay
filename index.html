@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Кабінет</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#15171c;--c:#1e2128;--c2:#262a33;--b:#2f343f;--t:#e6e8ec;--m:#8a909c;--g:#9be564;--p:#a855f7;--r:#ef4444;--o:#f97316}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:15px system-ui,sans-serif;padding-top:env(safe-area-inset-top)}
+button,select,input{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:12px;padding:14px 16px;position:sticky;top:0;background:var(--bg);z-index:5}
+header h1{margin:0;font-size:22px}header small{display:block;color:var(--m);font-size:11px}
+.burger{background:none;border:0;font-size:24px;color:var(--m)}.av{margin-left:auto;width:42px;height:42px;border-radius:50%;background:#f4c27a;display:grid;place-items:center;border:2px solid var(--g);font-size:22px}
+main{padding:0 16px 40px;max-width:760px;margin:auto}h2{font-size:22px;margin:8px 0 14px;display:flex;align-items:center;gap:8px}h2 .sp{margin-left:auto;display:flex;gap:8px}
+.card{background:var(--c);border:1px solid var(--b);border-radius:14px;padding:14px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.k{color:var(--m);font-size:12px}.v{font-size:30px;font-weight:700}
+.btn{border:1px solid var(--b);background:var(--c2);border-radius:10px;padding:8px 14px;cursor:pointer}
+.btn.g{background:var(--g);color:#10200a;border-color:var(--g);font-weight:600}.btn.p{background:var(--p);border-color:var(--p)}.btn.ic{padding:7px 10px;border-color:var(--g);color:var(--g);background:none}.btn.r{border-color:var(--r);color:var(--r);background:none}
+.tabs{display:flex;gap:10px}.tabs .btn{flex:1;text-align:center}.tabs .on{background:var(--g);color:#10200a;border-color:var(--g);font-weight:600}
+.tag{display:inline-block;border:1px solid var(--m);border-radius:99px;padding:1px 9px;font-size:12px;margin:2px 2px 2px 0}.tag.g{background:var(--g);color:#10200a;border-color:var(--g)}
+.muted{color:var(--m)}.empty{text-align:center;color:var(--m);padding:30px 0}
+.sw{width:42px;height:24px;border-radius:99px;background:var(--b);position:relative;cursor:pointer;flex:none;border:0}.sw:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}.sw.on{background:var(--g)}.sw.on:after{left:21px}
+.row{display:flex;align-items:center;gap:10px;justify-content:space-between}
+#side{position:fixed;inset:0 auto 0 0;width:270px;background:var(--c);border-right:1px solid var(--b);padding:calc(16px + env(safe-area-inset-top)) 14px 16px;transform:translateX(-100%);transition:.2s;z-index:20;overflow:auto}
+#side.open{transform:none}#shade{position:fixed;inset:0;background:#0008;display:none;z-index:15}#shade.open{display:block}
+#side a{display:block;padding:11px 12px;border-radius:10px;color:var(--t);text-decoration:none;margin:2px 0}#side a.on{background:var(--c2);border-left:3px solid var(--g)}
+.rt{font-size:13px;margin-top:14px}.rt div{display:flex;justify-content:space-between;padding:2px 0}.rt b{color:var(--g)}
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:30;padding:16px}.modal.open{display:flex}
+.modal>div{background:var(--c);border:1px solid var(--b);border-radius:14px;padding:18px;width:100%;max-width:420px;max-height:90vh;overflow:auto}
+label{display:block;margin:12px 0 4px;font-size:13px;color:var(--m)}input,select{width:100%;background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:10px}
+.ri{display:flex;gap:10px;align-items:center;margin:8px 0}.ri .b{font-size:26px}
+</style></head><body>
+<header><button class="burger" onclick="side(1)">☰</button><div><h1 id="brand">…</h1><small id="slogan"></small></div><div class="av">🧑</div></header>
+<div id="shade" onclick="side(0)"></div><nav id="side"></nav>
+<main id="app"></main>
+<div class="modal" id="modal" onclick="if(event.target==this)closeM()"><div id="mbody"></div></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let S={},R={},page='dash',arch=false,devMode='manual';
+const D={traffic:false,n:{deal:{on:1,s:0},dispute:{on:1,s:1},msg:{on:1,s:2}},reqs:[],seq:4700,payTab:'avail',devices:[],mode:'manual'};
+const NAV=[['dash','📊','Панель управління'],['news','📰','Новини'],['notif','🔔','Сповіщення'],['req','💳','Реквізити'],['deals','💲','Угоди'],['pay','📤','Виплати'],['disp','⚖️','Спори'],['fin','💰','Фінанси'],['auto','⚙️','Автоматика']];
+const SOUNDS=[['Дзвінок',[880,660,880]],['Кришталь',[1320,1760]],['Сигнал',[520,520,520]]];
+const TG=window.Telegram&&Telegram.WebApp;if(TG){TG.ready();TG.expand();try{TG.setHeaderColor('#15171c');TG.setBackgroundColor('#15171c')}catch(e){}}
+const Q=new URLSearchParams(location.search),BRAND=Q.get('b')||'CorePay',SLOGAN=Q.get('s')||'Макет особистого кабінету';
+// Сховище: Telegram CloudStorage (синхронізується між пристроями), запасний варіант — localStorage. Сервер не потрібен.
+const CS=TG&&TG.CloudStorage&&TG.isVersionAtLeast&&TG.isVersionAtLeast('6.9')?TG.CloudStorage:null,CH=3000;
+const csGet=k=>new Promise((ok,no)=>CS.getItems(k,(e,v)=>e?no(e):ok(v)));
+const csSet=(k,v)=>new Promise((ok,no)=>CS.setItem(k,v,(e,r)=>e?no(e):ok(r)));
+const csDel=k=>new Promise((ok,no)=>CS.removeItems(k,(e,r)=>e?no(e):ok(r)));
+let dirty=false,busy=false,oldN=0;
+const save=()=>{dirty=true;if(!busy)flush()};
+async function flush(){busy=true;while(dirty){dirty=false;const j=JSON.stringify(S);try{localStorage.setItem('cab',j)}catch(e){}
+if(CS)try{const n=Math.ceil(j.length/CH);for(let i=0;i<n;i++)await csSet('s'+i,j.slice(i*CH,(i+1)*CH));await csSet('n',String(n));
+if(oldN>n){const x=[];for(let i=n;i<oldN;i++)x.push('s'+i);await csDel(x)}oldN=n}catch(e){}}busy=false}
+async function loadState(){if(CS)try{const n=+((await csGet(['n'])).n||0);if(n){const ks=[...Array(n).keys()].map(i=>'s'+i),v=await csGet(ks);oldN=n;return JSON.parse(ks.map(k=>v[k]||'').join(''))}}catch(e){}
+try{return JSON.parse(localStorage.getItem('cab')||'{}')}catch(e){return{}}}
+function beep(i){try{const a=new(window.AudioContext||webkitAudioContext)();SOUNDS[i][1].forEach((f,k)=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=f;o.connect(g);g.connect(a.destination);g.gain.value=.15;o.start(a.currentTime+k*.18);o.stop(a.currentTime+k*.18+.14)})}catch(e){}}
+function side(o){$('#side').classList.toggle('open',!!o);$('#shade').classList.toggle('open',!!o)}
+const fmt=v=>v==null?'—.—':(+v).toLocaleString('uk',{maximumFractionDigits:v<10?3:2});
+function nav(){const on=S.traffic;$('#side').innerHTML=`<div class="row" style="margin-bottom:10px"><span>Трафік</span><span class="tag">${on?'Онлайн':'Офлайн'}</span><button class="sw ${on?'on':''}" onclick="S.traffic=!S.traffic;save();nav();render()"></button></div>`+
+NAV.map(n=>`<a href="#${n[0]}" class="${page==n[0]?'on':''}" onclick="side(0)">${n[1]} &nbsp;${n[2]}</a>`).join('')+
+`<div class="rt"><b style="color:var(--m)">Курс Tether TRC-20</b>${['UAH','RUB','KZT'].map(c=>`<div><span>${fmt(R[c])}</span><b>${c}</b></div>`).join('')}<button class="btn" style="width:100%;margin-top:10px" onclick="side(0);ratesM()">Показати всі курси</button></div>`}
+function ratesM(){const rs=Object.entries(R);M(`<h2>Курс Tether TRC-20</h2>${rs.length?rs.map(([c,v])=>`<div class="row card" style="padding:10px"><b>${c}</b><span>${fmt(v)}</span></div>`).join(''):'<p class="muted">Курси недоступні — перевірте інтернет.</p>'}<p class="muted" style="font-size:12px">Джерело: ${esc(RM.src||'—')} · оновлено ${RM.t?Math.round((Date.now()-RM.t)/1000):'—'} с тому</p><button class="btn" onclick="closeM()">Закрити</button>`)}
+let RM={};
+const CUR=['UAH','RUB','KZT','PLN','USD','EUR','GEL','TRY'];
+async function jget(u){const c=new AbortController(),t=setTimeout(()=>c.abort(),10000);try{const r=await fetch(u,{signal:c.signal});if(!r.ok)throw Error(r.status);return await r.json()}finally{clearTimeout(t)}}
+const SRC=[
+['CoinGecko',async()=>{const j=(await jget('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies='+CUR.map(c=>c.toLowerCase()).join(','))).tether;const o={};CUR.forEach(c=>{if(j[c.toLowerCase()]!=null)o[c]=j[c.toLowerCase()]});return o}],
+['ExchangeRate-API (USD≈USDT)',async()=>{const j=(await jget('https://open.er-api.com/v6/latest/USD')).rates;const o={};CUR.forEach(c=>{if(j[c]!=null)o[c]=j[c]});return o}]];
+async function loadRates(){if(RM.t&&Date.now()-RM.t<60000&&Object.keys(R).length){nav();return}
+for(const[name,fn]of SRC){try{const v=await fn();if(Object.keys(v).length){R=v;RM={t:Date.now(),src:name};nav();return}}catch(e){}}nav()}
+const M=h=>{$('#mbody').innerHTML=h;$('#modal').classList.add('open')},closeM=()=>$('#modal').classList.remove('open');
+const sw=(on,f)=>`<button class="sw ${on?'on':''}" onclick="${f}"></button>`;
+const pages={
+dash(){const a=S.reqs.filter(r=>r.on&&!r.arch).length;return`<h2>Панель управління</h2><div class="grid"><div class="card"><div class="k">Угод сьогодні</div><div class="v">0</div></div><div class="card"><div class="k">Обсяг за день</div><div class="v">0 <small class="k">UAH</small></div></div><div class="card"><div class="k">Активних реквізитів</div><div class="v" style="color:var(--g)">${a}</div></div><div class="card"><div class="k">Відкритих спорів</div><div class="v">0</div></div></div><div class="card empty">Графік активності з'явиться тут.</div>`},
+news(){return`<h2>Новини <span class="sp"><button class="btn ic" onclick="loadRates();render()">⟳</button></span></h2><div class="card empty">Поки немає новин.</div>`},
+notif(){return`<h2>Сповіщення</h2><p class="muted">Звукові сповіщення в панелі — працюють лише у цій веб-версії.</p>`+[['deal','Нова угода'],['dispute','Новий спір'],['msg','Нове повідомлення']].map(([k,t])=>`<div class="card"><div class="row"><b>${t}</b>${sw(S.n[k].on,`S.n.${k}.on=+!S.n.${k}.on;save();render()`)}</div><div class="row" style="margin-top:10px"><select onchange="S.n.${k}.s=+this.value;save();beep(+this.value)">${SOUNDS.map((s,i)=>`<option value="${i}" ${S.n[k].s==i?'selected':''}>${s[0]}</option>`).join('')}</select><button class="btn" onclick="beep(S.n.${k}.s)">▶</button></div></div>`).join('')},
+req(){const L=S.reqs.filter(r=>!!r.arch==arch);return`<h2>Реквізити</h2><div class="row" style="margin-bottom:12px"><div class="tabs" style="width:140px"><button class="btn ${!arch?'on':''}" onclick="arch=false;render()">🟢</button><button class="btn ${arch?'on':''}" onclick="arch=true;render()">🗄</button></div><button class="btn p" onclick="reqM()">＋</button></div>`+
+(L.length?L.map(r=>`<div class="card"><div class="row"><span class="muted">ID: ${r.id}</span><span class="muted">${r.cur}</span>${sw(r.on,`tog(${r.id})`)}<button class="btn" onclick="act(${r.id})">⋮</button></div><div class="ri"><span class="b">🏦</span><div><b>${esc(r.num.replace(/(.{4})/g,'$1 ').trim())}</b><br><span class="muted">${esc(r.holder)}</span></div></div><span class="tag">${{card:'Карта',ecom:'E-COM',iban:'IBAN '+r.cur}[r.type]}</span><span class="tag">${esc(r.sched||'Без розкладу')}</span>${r.int?`<span class="tag">кожні ${esc(r.int)} хв</span>`:''}<div class="muted" style="font-size:13px;margin-top:6px"><b style="color:var(--g)">0</b> з 5 активних</div></div>`).join(''):`<div class="card empty">${arch?'Архів порожній.':'Список порожній. Натисніть ＋, щоб створити перший реквізит.'}</div>`)},
+deals(){return`<h2>Угоди</h2><div class="card empty">Угод поки немає.</div>`},
+pay(){const t=S.payTab;return`<h2>Виплати <span class="sp"><button class="btn g" onclick="alert('Поки немає даних для вивантаження')">Вигрузити</button></span></h2><div class="grid"><div class="card"><div class="k">Активних виплат</div><div class="v" style="color:var(--g)">0</div><div class="k">з 5</div></div><div class="card"><div class="k">Холд для вас</div><div class="v" style="color:var(--o)">30</div><div class="k">хв очікування</div></div></div><div class="tabs" style="margin:10px 0"><button class="btn ${t=='avail'?'on':''}" onclick="S.payTab='avail';save();render()">Доступні виплати</button><button class="btn ${t=='hist'?'on':''}" onclick="S.payTab='hist';save();render()">Історія виплат</button></div><div class="card empty">${t=='avail'?'Поки немає заявок.<br><br><button class="btn r" onclick="render()">⟳ Оновити</button>':'Історія порожня.'}</div>`},
+disp(){return`<h2>Спори по угодах</h2><div class="card empty">Спорів немає.</div>`},
+fin(){const u=R.UAH;return`<h2>Фінанси</h2><div class="grid"><div class="card"><div class="k">Баланс</div><div class="v">0.00</div><div class="k">USDT ≈ ${fmt(0*u||0)} UAH</div></div><div class="card"><div class="k">В холді</div><div class="v">0.00</div><div class="k">USDT</div></div></div><div class="card empty">Операцій немає.</div>`},
+auto(){return`<h2>Пристрої</h2><div class="card"><b>Створити токен для пристрою</b><label>Назва пристрою</label><input id="dn" placeholder="Напр.: Samsung Galaxy S21"><button class="btn g" style="margin-top:12px" onclick="addDev()">Створити токен</button></div>`+S.devices.map((d,i)=>`<div class="card"><div class="row"><b>${esc(d.name)}</b><button class="btn r" onclick="S.devices.splice(${i},1);save();render()">✕</button></div><code style="word-break:break-all;color:var(--g)">${d.token}</code></div>`).join('')+`<div class="card"><b>Режим обробки СМС</b><select style="margin-top:8px" onchange="S.mode=this.value;save()"><option value="manual" ${S.mode=='manual'?'selected':''}>Ручний — СМС прив'язується вручну</option><option value="auto" ${S.mode=='auto'?'selected':''}>Автоматичний</option></select></div>`}};
+function addDev(){const n=$('#dn').value.trim();if(!n)return;S.devices.push({name:n,token:[...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,'0')).join('')});save();render()}
+function tog(id){const r=S.reqs.find(r=>r.id==id);r.on=!r.on;save();render()}
+function act(id){const r=S.reqs.find(r=>r.id==id);M(`<h2>ID ${id}</h2><button class="btn" style="width:100%;margin:4px 0" onclick="S.reqs.find(r=>r.id==${id}).arch=${!r.arch};save();closeM();render()">${r.arch?'↩ Відновити':'🗄 В архів'}</button><button class="btn r" style="width:100%;margin:4px 0" onclick="if(confirm('Видалити?')){S.reqs=S.reqs.filter(r=>r.id!=${id});save();closeM();render()}">🗑 Видалити</button>`)}
+function reqM(){M(`<h2>Новий реквізит</h2><label>Валюта</label><select id="rc"><option>UAH</option><option>RUB</option><option>KZT</option><option>PLN</option></select><label>Тип</label><select id="rt"><option value="">Виберіть тип реквізиту</option><option value="card">Карта</option><option value="ecom">E-COM</option><option value="iban">IBAN</option></select><label>Номер карти / IBAN</label><input id="rn" inputmode="numeric" placeholder="4441 1144 …"><label>Власник</label><input id="rh"><label>Інтервал (хв)</label><input id="ri" inputmode="numeric" placeholder="Порожньо — без обмеження"><label>Розклад</label><select id="rs"><option value="">Без розкладу</option></select><div class="row" style="margin-top:12px"><span>Реквізит увімкнено</span><button class="sw on" id="ro" onclick="this.classList.toggle('on')"></button></div><div class="row" style="margin-top:18px;justify-content:flex-end"><button class="btn" onclick="closeM()">Скасувати</button><button class="btn g" onclick="saveReq()">Зберегти</button></div>`)}
+function saveReq(){const type=$('#rt').value,num=$('#rn').value.replace(/\s/g,''),holder=$('#rh').value.trim();if(!type||num.length<8||!holder)return alert('Оберіть тип, вкажіть номер (мін. 8 символів) і власника');S.reqs.unshift({id:++S.seq,cur:$('#rc').value,type,num,holder,int:$('#ri').value,sched:$('#rs').value,on:$('#ro').classList.contains('on'),arch:false});save();closeM();arch=false;render()}
+function render(){page=(location.hash.slice(1)||'dash');if(!pages[page])page='dash';$('#app').innerHTML=pages[page]();nav()}
+addEventListener('hashchange',render);
+(async()=>{if(!TG||!TG.initData){$('#app').innerHTML='<div class="card empty">⛔️ Відкрийте кабінет через бота (кнопка «Кабінет»).</div>';return}
+const st=await loadState();S=Object.assign(JSON.parse(JSON.stringify(D)),st);$('#brand').textContent=BRAND;$('#slogan').textContent=SLOGAN;document.title=BRAND;render();loadRates();setInterval(loadRates,60000)})();
+</script></body></html>
